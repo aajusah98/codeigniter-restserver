@@ -110,7 +110,7 @@ $config['rest_realm'] = 'REST API';
 |           authorization key
 |
 */
-$config['rest_auth'] = FALSE;
+$config['rest_auth'] = 'basic';
 
 /*
 |--------------------------------------------------------------------------
@@ -126,7 +126,7 @@ $config['rest_auth'] = FALSE;
 | Note: If 'rest_auth' is set to 'session' then change 'auth_source' to the name of the session variable
 |
 */
-$config['auth_source'] = 'ldap';
+$config['auth_source'] = 'library';
 
 /*
 |--------------------------------------------------------------------------
@@ -156,8 +156,45 @@ $config['strict_api_and_auth'] = TRUE; // force the use of both api and auth bef
 | e.g: md5('admin:REST API:1234') = '1e957ebc35631ab22d5bd6526bd14ea2'
 |
 */
-$config['auth_library_class'] = '';
-$config['auth_library_function'] = '';
+$config['auth_library_class'] = 'Api_auth';
+$config['auth_library_function'] = 'login';
+/*
+|--------------------------------------------------------------------------
+| REST Login Database
+|--------------------------------------------------------------------------
+| Create database login user or you can change if you want 
+|
+| Default table schema:
+|   CREATE TABLE `api_login` (
+|       `id` INT(11) NOT NULL AUTO_INCREMENT,
+|       `username` INT(150) NOT NULL,
+|       `password` VARCHAR(255) NOT NULL,
+|       `controler` INT(255) NOT NULL,
+|       `limit` TINYINT(5) NOT NULL DEFAULT '0',
+|       `accept` ENUM('y','n')  NOT NULL DEFAULT 'n',
+|       `status` INT(5) TEXT NULL DEFAULT NULL,
+|       PRIMARY KEY (`id`)
+|   ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+|
+|
+*/
+$config['auth_login_db'] = 'api_login';
+/*
+| TRUE if you want user can acces api limit access
+*/
+$config['auth_login_limit'] = false;
+/*
+|
+|if the value True => the user can only use the fire controller that has been mentioned in the coloumn 
+| controler in the database, the format of writing:
+| (controler1; controler2; controler3)
+|
+| if the user can only access a particular class or a certain method enter the value coloumn controler with value 
+|(controler1->function->method;controler2->function->method) 
+| or if allow all methode in one function enter value coloumn controler in database with value 
+|(controler1->function;controler2->function;)
+*/
+$config['auth_login_controler'] = TRUE;
 
 /*
 |--------------------------------------------------------------------------
