@@ -1,0 +1,156 @@
+<?php defined('BASEPATH') OR exit('No direct script access allowed');
+
+class Api_auth
+{
+    private $_log = FALSE;
+    private $_user='';
+    private $_pass='';
+    private $_CI;
+    private $_limit;
+    private $_controler;
+    private $_db='';
+    private $_db_controler;
+    private $_db_limit;
+    private $_db_accept;
+    private $_db_status;
+
+    public function __construct($arrayName = array('username' =>'', 'password'=>''))
+    {
+         $this->_CI = &get_instance();
+        $this->_CI->load->database();
+        $this->_db = $this->_CI->config->item('auth_login_db');
+        $this->_limit = $this->_CI->config->item('auth_login_limit');
+        $this->_controler = $this->_CI->config->item('auth_login_controler');
+        $this->_user = $arrayName['username'];
+        $this->_pass = md5($arrayName['password']);
+     
+        $this->_cek_db();
+        $this->_cek_empty();
+        $this->get_user();
+
+
+    }
+
+    public function _cek_limit()
+    {
+        //create limit user akkses
+    }
+
+    public function __destruct()
+    {
+        return $this->_log;
+    }
+
+    private function _cek_db()
+    {
+           if (!$this->_CI->db->table_exists($this->_db))
+        {
+            return false;
+            exit;
+        }
+    }
+    private function _cek_empty()
+    {
+        if ($this->_user == '' or $this->_pass == '')
+        {
+            return false; exit;
+        }
+    }
+
+    private function _cek_controler()
+    {
+        $_class = strtolower($this->_CI->router->fetch_class());
+        $_function = strtolower($this->_CI->router->fetch_method());
+        $_method = strtolower($this->_CI->input->server('REQUEST_METHOD'));
+      
+        
+        if(is_null($this->_db_controler) or $this->_db_controler == '')
+        {
+           return false; exit;    
+        }
+        $ctrl = explode(';', strtolower(str_replace(' ', '', trim($this->_db_controler))));
+        $temp=array();
+        foreach ($ctrl as $key) {
+            $pos = strpos('->', $key);
+            if($pos === false)
+            {
+                 $temp[$key][0] = 'all';
+                    $temp[$key][1] = 'all';
+            }else{
+                $fct = explode('->', $key);
+                if(count($fct) > 1)
+                {
+                    $temp[$key][0] = $val[0];
+                    $temp[$key][1] = $val[1];
+                }else{
+                    $temp[$key][0] = $val[0];
+                    $temp[$key][1] = 'all';
+                }
+            }
+        }
+
+        if(array_key_exists(strtolower($_class), $temp))
+        {
+            if(strtolower($temp[strtolower($_class)][0]) == 'all' and strtolower($temp[strtolower($_class)][1]) == 'all' ){
+                return true;
+                exit;
+            }elseif(strtolower($temp[strtolower($_class)][0]) == 'all' or strtolower($temp[strtolower($_class)][0]) == strtolower($_function)){
+                return true;
+                exit;
+            }elseif(strtolower($temp[strtolower($_class)][1]) == 'all' or strtolower($temp[strtolower($_class)][1]) == strtolower($_method)){
+                return true;
+                exit;
+            }else{
+                return false;
+                exit;
+            }
+        }else{
+            return false;
+            exit;
+        }
+    }
+
+    private function get_user()
+    {
+        $hasil = array();
+        $this->_CI->db->where(array('username'=>$this->_user, 'password'=>$this->_pass));
+        $this->_CI->db->from($this->_CI->config->item('auth_login_db'));
+        if($result = $this->_CI->db->get()->result())
+        {
+            foreach ($result as $key) {
+                $this->_log = TRUE;
+                $this->_db_controler = $key->controler;
+                $this->_db_limit = $key->limit;
+                $this->_db_accept = $key->accept;
+                $this->_db_status = $key->status;
+            }
+        }else{
+            return false;
+            exit;
+        }
+    }
+
+    public function login()
+    {
+        if(is_null($this->_db_accept) or $this->_db_accept == '' or strtolower($this->_db_accept) === 'n')
+        {
+            return FALSE; exit;
+        }
+        
+        if($this->_controler == TRUE)
+        {
+            if($this->_cek_controler() == false)
+            {
+                    return false; exit;
+            }  
+        }
+      
+
+        if($this->_limit == TRUE)
+        {
+            $this->_cek_limit();
+        }
+
+        return $this->_log;
+    }
+}
